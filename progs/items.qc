@@ -1346,3 +1346,20 @@ void() DropBackpack =
 	item.nextthink = time + 120;	// remove after 2 minutes
 	item.think = SUB_Remove;
 };
+
+void(vector o, float life_time) DropPoint =
+{	
+	local entity item;
+    item = spawn();
+    /*item.movetype = MOVETYPE_PUSH;*/
+    /*item.solid = SOLID_BSP;*/
+    setmodel (item, "progs/s_bubble.spr");
+    setsize (item, item.mins , item.maxs);
+    setorigin (item, o);
+    if (life_time > 0)
+    {
+        item.nextthink = time + life_time;
+        item.think = SUB_Remove;
+    }
+};
+

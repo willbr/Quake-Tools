@@ -279,6 +279,7 @@ void() worldspawn =
 	precache_model ("progs/gib2.mdl");
 	precache_model ("progs/gib3.mdl");
 
+	precache_model ("progs/s_light.spr");
 	precache_model ("progs/s_bubble.spr");	// drowning bubbles
 	precache_model ("progs/s_explod.spr");	// sprite explosion
 

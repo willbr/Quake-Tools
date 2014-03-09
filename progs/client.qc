@@ -462,16 +462,36 @@ called each time a player is spawned
 void() DecodeLevelParms;
 void() PlayerDie;
 
+void() PlayerBounce =
+{
+    // Bounce Longer
+    if (self.flags & FL_ONGROUND)
+    {
+        self.flags = self.flags - FL_ONGROUND;
+    }
+    if ((time - self.last_bounce) > 0.1) {
+        /*dprint(ftos(time - self.last_bounce));*/
+        if (vlen(self.velocity) > 400)
+        {
+            sound (self, CHAN_WEAPON, "weapons/bounce.wav", 1, ATTN_NORM);	// bounce sound
+        } else {
+            sound (self, CHAN_WEAPON, "weapons/bounce.wav", 0.3, ATTN_NORM);	// bounce sound
+        }
+        self.velocity = self.velocity * 0.99;
+    }
+    self.last_bounce = time;
+}
 
 void() PutClientInServer =
 {
 	local	entity spot;
 
+    self.touch = PlayerBounce;
 	self.classname = "player";
 	self.health = 100;
 	self.takedamage = DAMAGE_AIM;
-	self.solid = SOLID_SLIDEBOX;
-	self.movetype = MOVETYPE_WALK;
+	self.solid = SOLID_BBOX;
+	self.movetype = MOVETYPE_BOUNCE;
 	self.show_hostile = 0;
 	self.max_health = 100;
 	self.flags = FL_CLIENT;
@@ -962,16 +982,89 @@ void() PlayerPreThink =
 	if (self.deadflag == DEAD_DYING)
 		return;	// dying, so do nothing
 
-	if (self.button2)
-	{
-		PlayerJump ();
-	}
-	else
-		self.flags = self.flags | FL_JUMPRELEASED;
 
-// teleporters can force a non-moving pause time	
-	if (time < self.pausetime)
-		self.velocity = '0 0 0';
+    if (self.button2 == 0)
+    {
+        self.move_forward = 0;
+        self.move_backward = 0;
+    }
+
+
+	if (self.impulse == 20)
+    {
+        self.move_forward = TRUE;
+    }
+
+	if (self.impulse == 21)
+    {
+        self.move_forward = FALSE;
+    }
+
+	if (self.impulse == 22)
+    {
+        self.move_backward = TRUE;
+    }
+
+	if (self.impulse == 23)
+    {
+        self.move_backward = FALSE;
+    }
+
+
+
+    local float move_speed;
+    local float s, max_speed;
+    move_speed = vlen(self.velocity);
+    self.armorvalue = move_speed;
+
+    max_speed = 1500;
+    s = 10;
+    self.velocity = self.velocity * 0.98;
+
+    if (self.move_forward)
+    {
+        if (move_speed < 400)
+        {
+            local vector start, end;
+            local vector new_end;
+
+            self.movetype = MOVETYPE_FLY;
+            self.velocity = self.velocity + (v_forward * s);
+
+            start = self.origin;
+            end = start + v_forward * 50;
+            traceline(start, end, TRUE, self);
+            if (trace_fraction < 1)
+            {
+                // fixes getting stuck on the floor / walls
+                self.velocity = self.velocity + (trace_plane_normal * trace_fraction * 20);
+            }
+
+        }
+        else if (move_speed < max_speed)
+        {
+            self.movetype = MOVETYPE_BOUNCE;
+            self.velocity = self.velocity + (v_forward * s);
+        }
+        else
+        {
+            self.movetype = MOVETYPE_BOUNCE;
+        }
+
+
+    }
+
+
+    if (self.move_backward)
+    {
+        if (move_speed < max_speed)
+        {
+            self.velocity = self.velocity + (v_forward * -s);
+        }
+    }
+
+
+
 };
 	
 /*
@@ -1169,6 +1262,12 @@ void() PlayerPostThink =
 		self.jump_flag = self.velocity_z;
 
 	CheckPowerups ();
+
+    // Bounce forever
+    if (self.flags & FL_ONGROUND)
+    {
+        self.flags = self.flags - FL_ONGROUND;
+    }
 };
 
 
