@@ -464,13 +464,68 @@ void() PlayerDie;
 
 void() PlayerBounce =
 {
-    // Bounce Longer
-    if (self.flags & FL_ONGROUND)
+    local vector start, end;
+    local float move_speed;
+
+    local float i, steps;
+    local vector step;
+
+    local vector min_trace_plane_normal;
+    local float min_trace_fraction;
+
+    local float min_i;
+
+    steps = 5;
+    step = self.size * (1 / (steps - 1));
+
+    start = self.origin;
+    end = self.origin + self.velocity;
+    traceline(start, end, TRUE, self);
+
+    min_trace_plane_normal = trace_plane_normal;
+    min_trace_fraction = trace_fraction;
+
+    dprint("bounce\n");
+
+    for (i = 0; i < steps; i++)
     {
-        self.flags = self.flags - FL_ONGROUND;
+        start = self.absmin;
+        end = self.absmin + self.velocity;
+        start = start + (i * step);
+        end = end + (i * step);
+        traceline(start, end, TRUE, self);
+
+        if (trace_fraction < min_trace_fraction)
+        {
+            min_trace_fraction = trace_fraction;
+            min_i = i;
+        }
     }
+
+
+    ///////////////////////////
+    start = self.absmin;
+    end = self.absmin + self.velocity;
+    start = start + (min_i * step);
+    end = end + (min_i * step);
+    traceline(start, end, TRUE, self);
+
+    if ((trace_fraction < 1) && !(self.flags & FL_ONGROUND))
+    {
+        DropPoint(trace_endpos + (trace_plane_normal * 10), 5);
+        DropPoint(trace_endpos + (trace_plane_normal * 20), 5);
+        DropPoint(trace_endpos + (trace_plane_normal * 30), 5);
+        DropPoint(trace_endpos + (trace_plane_normal * 40), 5);
+        DropPoint(trace_endpos + (trace_plane_normal * 50), 5);
+    }
+    //////////////////////////////
+
+    self.velocity = min_trace_plane_normal * vlen(self.velocity);
+
+    self.bounce = TRUE;
+    self.bounce_vector = trace_plane_normal;
+
     if ((time - self.last_bounce) > 0.1) {
-        /*dprint(ftos(time - self.last_bounce));*/
         if (vlen(self.velocity) > 400)
         {
             sound (self, CHAN_WEAPON, "weapons/bounce.wav", 1, ATTN_NORM);	// bounce sound
@@ -491,7 +546,8 @@ void() PutClientInServer =
 	self.health = 100;
 	self.takedamage = DAMAGE_AIM;
 	self.solid = SOLID_BBOX;
-	self.movetype = MOVETYPE_BOUNCE;
+	/*self.movetype = MOVETYPE_BOUNCE;*/
+	self.movetype = MOVETYPE_FLY;
 	self.show_hostile = 0;
 	self.max_health = 100;
 	self.flags = FL_CLIENT;
@@ -970,6 +1026,15 @@ void() PlayerPreThink =
 	CheckRules ();
 	WaterMove ();
 
+    if (self.bounce)
+    {
+        /*dprint("bounce ");*/
+        /*dprint(ftos(self.velocity * self.bounce_vector));*/
+        /*dprint("\n");*/
+        self.bounce = FALSE;
+        self.velocity = self.velocity + self.bounce_vector * vlen(self.velocity);
+    }
+
 	if (self.waterlevel == 2)
 		CheckWaterJump ();
 
@@ -1017,9 +1082,13 @@ void() PlayerPreThink =
     move_speed = vlen(self.velocity);
     self.armorvalue = move_speed;
 
+
     max_speed = 1500;
     s = 10;
-    self.velocity = self.velocity * 0.98;
+    if (move_speed > 100)
+    {
+        self.velocity = self.velocity * 0.99;
+    }
 
     if (self.move_forward)
     {
@@ -1028,27 +1097,27 @@ void() PlayerPreThink =
             local vector start, end;
             local vector new_end;
 
-            self.movetype = MOVETYPE_FLY;
+            /*self.movetype = MOVETYPE_FLY;*/
             self.velocity = self.velocity + (v_forward * s);
 
-            start = self.origin;
-            end = start + v_forward * 50;
-            traceline(start, end, TRUE, self);
-            if (trace_fraction < 1)
-            {
-                // fixes getting stuck on the floor / walls
-                self.velocity = self.velocity + (trace_plane_normal * trace_fraction * 20);
-            }
+            /*start = self.origin;*/
+            /*end = start + v_forward * 50;*/
+            /*traceline(start, end, TRUE, self);*/
+            /*if (trace_fraction < 1)*/
+            /*{*/
+                /*// fixes getting stuck on the floor / walls*/
+                /*self.velocity = self.velocity + (trace_plane_normal * trace_fraction * 20);*/
+            /*}*/
 
         }
         else if (move_speed < max_speed)
         {
-            self.movetype = MOVETYPE_BOUNCE;
+            /*self.movetype = MOVETYPE_BOUNCE;*/
             self.velocity = self.velocity + (v_forward * s);
         }
         else
         {
-            self.movetype = MOVETYPE_BOUNCE;
+            /*self.movetype = MOVETYPE_BOUNCE;*/
         }
 
 
