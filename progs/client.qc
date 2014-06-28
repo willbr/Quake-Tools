@@ -485,7 +485,7 @@ void() PlayerBounce =
     min_trace_plane_normal = trace_plane_normal;
     min_trace_fraction = trace_fraction;
 
-    dprint("bounce\n");
+    /*dprint("bounce\n");*/
 
     for (i = 0; i < steps; i++)
     {
@@ -503,27 +503,33 @@ void() PlayerBounce =
     }
 
 
-    ///////////////////////////
-    start = self.absmin;
-    end = self.absmin + self.velocity;
-    start = start + (min_i * step);
-    end = end + (min_i * step);
-    traceline(start, end, TRUE, self);
+    /*///////////////////////////*/
+    /*start = self.absmin;*/
+    /*end = self.absmin + self.velocity;*/
+    /*start = start + (min_i * step);*/
+    /*end = end + (min_i * step);*/
+    /*traceline(start, end, TRUE, self);*/
 
-    if ((trace_fraction < 1) && !(self.flags & FL_ONGROUND))
-    {
-        DropPoint(trace_endpos + (trace_plane_normal * 10), 5);
-        DropPoint(trace_endpos + (trace_plane_normal * 20), 5);
-        DropPoint(trace_endpos + (trace_plane_normal * 30), 5);
-        DropPoint(trace_endpos + (trace_plane_normal * 40), 5);
-        DropPoint(trace_endpos + (trace_plane_normal * 50), 5);
-    }
-    //////////////////////////////
+    /*if ((trace_fraction < 1) && !(self.flags & FL_ONGROUND))*/
+    /*{*/
+        /*DropPoint(trace_endpos + (trace_plane_normal * 10), 5);*/
+        /*[>DropPoint(trace_endpos + (trace_plane_normal * 20), 5);<]*/
+        /*[>DropPoint(trace_endpos + (trace_plane_normal * 30), 5);<]*/
+        /*DropPoint(trace_endpos + (trace_plane_normal * 40), 5);*/
+        /*DropPoint(trace_endpos + (trace_plane_normal * 50), 5);*/
+    /*}*/
+    /*//////////////////////////////*/
 
     self.velocity = min_trace_plane_normal * vlen(self.velocity);
 
     self.bounce = TRUE;
-    self.bounce_vector = trace_plane_normal;
+
+    local vector a;
+    a = self.velocity;
+    a_x = fabs(a_x) * trace_plane_normal_x;
+    a_y = fabs(a_y) * trace_plane_normal_y;
+    a_z = fabs(a_z) * trace_plane_normal_z;
+    self.bounce_vector = a;
 
     if ((time - self.last_bounce) > 0.1) {
         if (vlen(self.velocity) > 400)
@@ -1023,16 +1029,22 @@ void() PlayerPreThink =
 
 	makevectors (self.v_angle);		// is this still used
 
+    dprint("angles: ");
+    dprint(vtos(self.v_angle));
+    dprint("\n");
+
 	CheckRules ();
 	WaterMove ();
 
+
+
     if (self.bounce)
     {
-        /*dprint("bounce ");*/
-        /*dprint(ftos(self.velocity * self.bounce_vector));*/
-        /*dprint("\n");*/
         self.bounce = FALSE;
-        self.velocity = self.velocity + self.bounce_vector * vlen(self.velocity);
+        self.velocity = self.velocity + self.bounce_vector;
+        self.velocity_x = self.velocity_x / 1.2;
+        self.velocity_y = self.velocity_y / 1.2;
+        self.velocity_z = self.velocity_z / 1.2;
     }
 
 	if (self.waterlevel == 2)
@@ -1085,9 +1097,16 @@ void() PlayerPreThink =
 
     max_speed = 1500;
     s = 10;
-    if (move_speed > 100)
+
+    if (self.nextslowdown < time)
     {
-        self.velocity = self.velocity * 0.99;
+        if (move_speed > 100)
+        {
+            self.velocity_x = self.velocity_x / 1.01;
+            self.velocity_y = self.velocity_y / 1.01;
+            self.velocity_z = self.velocity_z / 1.01;
+        }
+        self.nextslowdown = time + 0.1;
     }
 
     if (self.move_forward)

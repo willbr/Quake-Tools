@@ -716,3 +716,5 @@ float(entity targ, entity inflictor) CanDamage;
 .float bounce;
 .vector bounce_vector;
 
+.float nextslowdown;
+
