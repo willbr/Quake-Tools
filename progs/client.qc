@@ -791,20 +791,30 @@ void() PlayerJump =
 		return;
 	}
 
-	if (!(self.flags & FL_ONGROUND))
-		return;
+	if (self.flags & FL_ONGROUND)
+        self.jump_count = 0;
 
 	if ( !(self.flags & FL_JUMPRELEASED) )
+    {
 		return;		// don't pogo stick
+    }
 
 	self.flags = self.flags - (self.flags & FL_JUMPRELEASED);
 
-	self.flags = self.flags - FL_ONGROUND;	// don't stairwalk
-	
 	self.button2 = 0;
 // player jumping sound
-	sound (self, CHAN_BODY, "player/plyrjmp8.wav", 1, ATTN_NORM);
-	self.velocity_z = self.velocity_z + 270;
+    switch (self.jump_count) {
+        case 0:
+        case 1:
+            self.velocity_z = self.velocity_z + 350;
+            sound (self, CHAN_BODY, "player/plyrjmp8.wav", 1, ATTN_NORM);
+            break;
+        default:
+            /*dprint("default\n");*/
+            /*self.flags = self.flags - FL_ONGROUND;	// don't stairwalk*/
+            break;
+    }
+    self.jump_count += 1;
 };
 
 
