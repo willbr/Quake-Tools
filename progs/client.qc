@@ -766,6 +766,8 @@ void() PlayerDeathThink =
 
 void() PlayerJump =
 {
+	local vector start, end;
+
 	if (self.flags & FL_WATERJUMP)
 		return;
 	
@@ -791,9 +793,6 @@ void() PlayerJump =
 		return;
 	}
 
-	if (self.flags & FL_ONGROUND)
-        self.jump_count = 0;
-
 	if ( !(self.flags & FL_JUMPRELEASED) )
     {
 		return;		// don't pogo stick
@@ -803,10 +802,18 @@ void() PlayerJump =
 
 	self.button2 = 0;
 // player jumping sound
+    /*dprintf("self.jump_count", self.jump_count);*/
+    /*dprintv("self.velocity", self.velocity);*/
     switch (self.jump_count) {
         case 0:
         case 1:
-            self.velocity_z = self.velocity_z + 350;
+            /*dprint("case 1\n");*/
+            if (self.velocity_z > 0)
+            {
+                self.velocity_z = self.velocity_z + 350;
+            } else {
+                self.velocity_z = 350;
+            }
             sound (self, CHAN_BODY, "player/plyrjmp8.wav", 1, ATTN_NORM);
             break;
         default:
@@ -814,7 +821,32 @@ void() PlayerJump =
             /*self.flags = self.flags - FL_ONGROUND;	// don't stairwalk*/
             break;
     }
+    /*dprintv("self.velocity", self.velocity);*/
     self.jump_count += 1;
+
+    local vector movement_direction;
+    movement_direction = normalize(self.velocity);
+    movement_direction_z = 0;
+
+	start = self.origin;
+    end = start + movement_direction * 100;
+    /*dpoint(start);*/
+    /*dpoint(end);*/
+
+	traceline (start, end, TRUE, self);
+	if (trace_fraction < 1)
+	{	// solid at waist
+        /*dprint("hit\n");*/
+        /*dpoint(start);*/
+        /*dpoint(trace_endpos);*/
+        /*dpoint(self.origin + trace_plane_normal * 330);*/
+        /*dpoint(self.origin + trace_plane_normal * 340);*/
+        /*dpoint(self.origin + trace_plane_normal * 350);*/
+        /*dprintv("self.velocity", self.velocity);*/
+        self.velocity = self.velocity + trace_plane_normal * 450;
+        /*dprintv("self.velocity", self.velocity);*/
+        self.jump_count = 1;
+	}
 };
 
 
@@ -971,6 +1003,9 @@ void() PlayerPreThink =
 	
 	if (self.deadflag == DEAD_DYING)
 		return;	// dying, so do nothing
+
+	if (self.flags & FL_ONGROUND)
+        self.jump_count = 0;
 
 	if (self.button2)
 	{
