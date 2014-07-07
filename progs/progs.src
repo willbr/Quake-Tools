@@ -1,6 +1,7 @@
 ../progs.dat
 
 defs.qc
+debug.qc // debug functions
 subs.qc
 fight.qc
 ai.qc
