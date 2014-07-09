@@ -806,13 +806,22 @@ void() PlayerJump =
     /*dprintv("self.velocity", self.velocity);*/
     switch (self.jump_count) {
         case 0:
+            /*dprint("case 0\n");*/
+            if (self.velocity_z > 0)
+            {
+                self.velocity_z = self.velocity_z + 250;
+            } else {
+                self.velocity_z = 350;
+            }
+            sound (self, CHAN_BODY, "player/plyrjmp8.wav", 1, ATTN_NORM);
+            break;
         case 1:
             /*dprint("case 1\n");*/
             if (self.velocity_z > 0)
             {
-                self.velocity_z = self.velocity_z + 350;
+                self.velocity_z = self.velocity_z + 150;
             } else {
-                self.velocity_z = 350;
+                self.velocity_z = 250;
             }
             sound (self, CHAN_BODY, "player/plyrjmp8.wav", 1, ATTN_NORM);
             break;
@@ -824,29 +833,42 @@ void() PlayerJump =
     /*dprintv("self.velocity", self.velocity);*/
     self.jump_count += 1;
 
-    local vector movement_direction;
-    movement_direction = normalize(self.velocity);
-    movement_direction_z = 0;
+    local vector bounce_force;
+    local vector horizontal_velocity;
+    local float horizontal_speed;
 
-	start = self.origin;
-    end = start + movement_direction * 100;
+    horizontal_velocity = self.velocity;
+    horizontal_velocity_z = 0;
+    horizontal_speed = vlen(horizontal_velocity);
+
+	start = self.origin + '0 0 20';
+    /*end = start + v_forward * 50;*/
+    end = start + v_forward * max(40, (horizontal_speed / 4.5));
+    dprintf("h speed", max(50, (horizontal_speed / 4.5)));
     /*dpoint(start);*/
     /*dpoint(end);*/
 
 	traceline (start, end, TRUE, self);
+    /*dprintf("trace_fraction", trace_fraction);*/
 	if (trace_fraction < 1)
 	{	// solid at waist
-        /*dprint("hit\n");*/
+        dprint("hit\n");
+        bounce_force = trace_plane_normal * 200;
+        bounce_force_z = bounce_force_z * 0.5;
         /*dpoint(start);*/
-        /*dpoint(trace_endpos);*/
-        /*dpoint(self.origin + trace_plane_normal * 330);*/
-        /*dpoint(self.origin + trace_plane_normal * 340);*/
-        /*dpoint(self.origin + trace_plane_normal * 350);*/
+        dpoint(trace_endpos);
+        dpoint(self.origin + bounce_force);
+        /*dprintf("dot", trace_plane_normal * self.velocity);*/
+        /*dprintv("bounce_force", bounce_force);*/
         /*dprintv("self.velocity", self.velocity);*/
-        self.velocity = self.velocity + trace_plane_normal * 450;
+        self.velocity = self.velocity + bounce_force;
         /*dprintv("self.velocity", self.velocity);*/
         self.jump_count = 1;
-	}
+	} else {
+        /*dprintf("no hit", trace_fraction);*/
+        /*dprintf("dot", trace_plane_normal * self.velocity);*/
+        /*self.velocity = self.velocity + v_forward * 100;*/
+    }
 };
 
 

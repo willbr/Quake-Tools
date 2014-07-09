@@ -2,6 +2,7 @@
 
 defs.qc
 debug.qc // debug functions
+maths.qc // min, max
 subs.qc
 fight.qc
 ai.qc
