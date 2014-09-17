@@ -1,3 +1,9 @@
+void(string s) dputs =
+{
+    dprint(s);
+    dprint("\n");
+}
+
 void(string s, vector v) dprintv =
 {
     dprint(s);
@@ -17,18 +23,21 @@ void(string s, float f) dprintf =
 
 void(vector v) dpoint =
 {
-    local entity	bubble;
+    if (cvar("developer") != 1)
+        return;
 
-	bubble = spawn();
-	setmodel (bubble, "progs/s_bubble.spr");
-	setorigin (bubble, v);
-	bubble.movetype = MOVETYPE_NOCLIP;
-	bubble.solid = SOLID_NOT;
-	bubble.velocity = '0 0 0';
-	bubble.classname = "dpoint";
-	bubble.frame = 0;
-	bubble.cnt = 0;
-	setsize (bubble, '-8 -8 -8', '8 8 8');
+    local entity	dot;
+
+	dot = spawn();
+	setmodel (dot, "progs/s_dot.spr");
+	setorigin (dot, v);
+	dot.movetype = MOVETYPE_NOCLIP;
+	dot.solid = SOLID_NOT;
+	dot.velocity = '0 0 0';
+	dot.classname = "dpoint";
+	dot.frame = 0;
+	dot.cnt = 0;
+	setsize (dot, '-8 -8 -8', '8 8 8');
     return;
 };
 
