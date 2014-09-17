@@ -841,14 +841,29 @@ void() PlayerJump =
     horizontal_velocity_z = 0;
     horizontal_speed = vlen(horizontal_velocity);
 
-	start = self.origin + '0 0 20';
+    local float steps;
+    local float step;
+    steps = 6;
+    step = (self.maxs_z * 2) / steps;
     /*end = start + v_forward * 50;*/
-    end = start + v_forward * max(40, (horizontal_speed / 4.5));
-    dprintf("h speed", max(50, (horizontal_speed / 4.5)));
-    /*dpoint(start);*/
-    /*dpoint(end);*/
 
-	traceline (start, end, TRUE, self);
+	start = self.origin;
+    start_z = self.absmin_z + 32; //avoid most stairs
+
+    local float i;
+    i = 0;
+
+    while (i < steps)
+    {
+        i += 1;
+        end = start + v_forward * max(40, (horizontal_speed / 4.5));
+        /*dpoint(start);*/
+        /*dpoint(end);*/
+        traceline (start, end, TRUE, self);
+        if (trace_fraction < 1) i = steps;
+        start_z += step;
+    }
+
     /*dprintf("trace_fraction", trace_fraction);*/
 	if (trace_fraction < 1)
 	{	// solid at waist
