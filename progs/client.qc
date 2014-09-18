@@ -798,27 +798,23 @@ void() PlayerJump =
 		return;		// don't pogo stick
     }
 
+    self.jump_count += 1;
+
 	self.flags = self.flags - (self.flags & FL_JUMPRELEASED);
 
 	self.button2 = 0;
-// player jumping sound
-    /*dprintf("self.jump_count", self.jump_count);*/
-    /*dprintv("self.velocity", self.velocity);*/
+
     switch (self.jump_count) {
-        case 0:
-            /*dprint("case 0\n");*/
-            if (self.velocity_z > 0)
-            {
+        case 1:
+            if (self.velocity_z > 0) {
                 self.velocity_z = self.velocity_z + 250;
             } else {
                 self.velocity_z = 350;
             }
             sound (self, CHAN_BODY, "player/plyrjmp8.wav", 1, ATTN_NORM);
             break;
-        case 1:
-            /*dprint("case 1\n");*/
-            if (self.velocity_z > 0)
-            {
+        case 2:
+            if (self.velocity_z > 0) {
                 self.velocity_z = self.velocity_z + 150;
             } else {
                 self.velocity_z = 250;
@@ -826,17 +822,12 @@ void() PlayerJump =
             sound (self, CHAN_BODY, "player/plyrjmp8.wav", 1, ATTN_NORM);
             break;
         default:
-            /*dprint("default\n");*/
-            /*self.flags = self.flags - FL_ONGROUND;	// don't stairwalk*/
             break;
     }
-    /*dprintv("self.velocity", self.velocity);*/
-    self.jump_count += 1;
 
     local vector bounce_force;
     local vector horizontal_velocity;
     local float horizontal_speed;
-
     horizontal_velocity = self.velocity;
     horizontal_velocity_z = 0;
     horizontal_speed = vlen(horizontal_velocity);
@@ -845,7 +836,6 @@ void() PlayerJump =
     local float step;
     steps = 6;
     step = (self.maxs_z * 2) / steps;
-    /*end = start + v_forward * 50;*/
 
 	start = self.origin;
     start_z = self.absmin_z + 32; //avoid most stairs
@@ -853,36 +843,19 @@ void() PlayerJump =
     local float i;
     i = 0;
 
-    while (i < steps)
-    {
+    while (i < steps) {
         i += 1;
         end = start + v_forward * max(40, (horizontal_speed / 4.5));
-        /*dpoint(start);*/
-        /*dpoint(end);*/
         traceline (start, end, TRUE, self);
         if (trace_fraction < 1) i = steps;
         start_z += step;
     }
 
-    /*dprintf("trace_fraction", trace_fraction);*/
 	if (trace_fraction < 1)
-	{	// solid at waist
-        dprint("hit\n");
+	{
         bounce_force = trace_plane_normal * 200;
         bounce_force_z = bounce_force_z * 0.5;
-        /*dpoint(start);*/
-        dpoint(trace_endpos);
-        dpoint(self.origin + bounce_force);
-        /*dprintf("dot", trace_plane_normal * self.velocity);*/
-        /*dprintv("bounce_force", bounce_force);*/
-        /*dprintv("self.velocity", self.velocity);*/
         self.velocity = self.velocity + bounce_force;
-        /*dprintv("self.velocity", self.velocity);*/
-        self.jump_count = 1;
-	} else {
-        /*dprintf("no hit", trace_fraction);*/
-        /*dprintf("dot", trace_plane_normal * self.velocity);*/
-        /*self.velocity = self.velocity + v_forward * 100;*/
     }
 };
 
