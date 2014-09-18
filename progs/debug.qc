@@ -29,7 +29,7 @@ void(vector v) dpoint =
     local entity	dot;
 
 	dot = spawn();
-	setmodel (dot, "progs/s_dot.spr");
+	setmodel (dot, "models/s_dot.spr");
 	setorigin (dot, v);
 	dot.movetype = MOVETYPE_NOCLIP;
 	dot.solid = SOLID_NOT;
