@@ -708,13 +708,5 @@ float (entity e, float healamount, float ignore) T_Heal; // health function
 float(entity targ, entity inflictor) CanDamage;
 
 
-
-.float move_forward;
-.float move_backward;
-
-.float last_bounce;
-.float bounce;
-.vector bounce_vector;
-
-.float nextslowdown;
+.float jump_count;
 

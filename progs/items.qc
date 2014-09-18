@@ -185,11 +185,6 @@ void() health_touch =
 			return;
 	}
 	
-	sprint(other, "You receive ");
-	s = ftos(self.healamount);
-	sprint(other, s);
-	sprint(other, " health\n");
-	
 // health touch sound
 	sound(other, CHAN_ITEM, self.noise, 1, ATTN_NORM);
 
@@ -292,7 +287,6 @@ void() armor_touch =
 		self.nextthink = time + 20;
 	self.think = SUB_regen;
 
-	sprint(other, "You got armor\n");
 // armor touch sound
 	sound(other, CHAN_ITEM, "items/armor1.wav", 1, ATTN_NORM);
 	stuffcmd (other, "bf\n");
@@ -477,9 +471,6 @@ void() weapon_touch =
 	else
 		objerror ("weapon_touch: unknown classname");
 
-	sprint (other, "You got the ");
-	sprint (other, self.netname);
-	sprint (other, "\n");
 // weapon touch sound
 	sound (other, CHAN_ITEM, "weapons/pkup.wav", 1, ATTN_NORM);
 	stuffcmd (other, "bf\n");
@@ -662,9 +653,6 @@ local float		best;
 
 	bound_other_ammo ();
 	
-	sprint (other, "You got the ");
-	sprint (other, self.netname);
-	sprint (other, "\n");
 // ammo touch sound
 	sound (other, CHAN_ITEM, "weapons/lock4.wav", 1, ATTN_NORM);
 	stuffcmd (other, "bf\n");
@@ -893,10 +881,6 @@ void() key_touch =
 	if (other.items & self.items)
 		return;
 
-	sprint (other, "You got the ");
-	sprint (other, self.netname);
-	sprint (other,"\n");
-
 	sound (other, CHAN_ITEM, self.noise, 1, ATTN_NORM);
 	stuffcmd (other, "bf\n");
 	other.items = other.items | self.items;
@@ -1094,10 +1078,6 @@ void() powerup_touch =
 	if (other.health <= 0)
 		return;
 
-	sprint (other, "You got the ");
-	sprint (other, self.netname);
-	sprint (other,"\n");
-
 	if (deathmatch)
 	{
 		self.mdl = self.model;
@@ -1262,34 +1242,6 @@ void() BackpackTouch =
 	
 	bound_other_ammo ();
 
-	sprint (other, "You get ");
-
-	if (self.ammo_shells)
-	{
-		s = ftos(self.ammo_shells);
-		sprint (other, s);
-		sprint (other, " shells  ");
-	}
-	if (self.ammo_nails)
-	{
-		s = ftos(self.ammo_nails);
-		sprint (other, s);
-		sprint (other, " nails ");
-	}
-	if (self.ammo_rockets)
-	{
-		s = ftos(self.ammo_rockets);
-		sprint (other, s);
-		sprint (other, " rockets  ");
-	}
-	if (self.ammo_cells)
-	{
-		s = ftos(self.ammo_cells);
-		sprint (other, s);
-		sprint (other, " cells  ");
-	}
-	
-	sprint (other, "\n");
 // backpack touch sound
 	sound (other, CHAN_ITEM, "weapons/lock4.wav", 1, ATTN_NORM);
 	stuffcmd (other, "bf\n");

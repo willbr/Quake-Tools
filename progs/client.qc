@@ -462,98 +462,16 @@ called each time a player is spawned
 void() DecodeLevelParms;
 void() PlayerDie;
 
-void() PlayerBounce =
-{
-    local vector start, end;
-    local float move_speed;
-
-    local float i, steps;
-    local vector step;
-
-    local vector min_trace_plane_normal;
-    local float min_trace_fraction;
-
-    local float min_i;
-
-    steps = 5;
-    step = self.size * (1 / (steps - 1));
-
-    start = self.origin;
-    end = self.origin + self.velocity;
-    traceline(start, end, TRUE, self);
-
-    min_trace_plane_normal = trace_plane_normal;
-    min_trace_fraction = trace_fraction;
-
-    /*dprint("bounce\n");*/
-
-    for (i = 0; i < steps; i++)
-    {
-        start = self.absmin;
-        end = self.absmin + self.velocity;
-        start = start + (i * step);
-        end = end + (i * step);
-        traceline(start, end, TRUE, self);
-
-        if (trace_fraction < min_trace_fraction)
-        {
-            min_trace_fraction = trace_fraction;
-            min_i = i;
-        }
-    }
-
-
-    /*///////////////////////////*/
-    /*start = self.absmin;*/
-    /*end = self.absmin + self.velocity;*/
-    /*start = start + (min_i * step);*/
-    /*end = end + (min_i * step);*/
-    /*traceline(start, end, TRUE, self);*/
-
-    /*if ((trace_fraction < 1) && !(self.flags & FL_ONGROUND))*/
-    /*{*/
-        /*DropPoint(trace_endpos + (trace_plane_normal * 10), 5);*/
-        /*[>DropPoint(trace_endpos + (trace_plane_normal * 20), 5);<]*/
-        /*[>DropPoint(trace_endpos + (trace_plane_normal * 30), 5);<]*/
-        /*DropPoint(trace_endpos + (trace_plane_normal * 40), 5);*/
-        /*DropPoint(trace_endpos + (trace_plane_normal * 50), 5);*/
-    /*}*/
-    /*//////////////////////////////*/
-
-    self.velocity = min_trace_plane_normal * vlen(self.velocity);
-
-    self.bounce = TRUE;
-
-    local vector a;
-    a = self.velocity;
-    a_x = fabs(a_x) * trace_plane_normal_x;
-    a_y = fabs(a_y) * trace_plane_normal_y;
-    a_z = fabs(a_z) * trace_plane_normal_z;
-    self.bounce_vector = a;
-
-    if ((time - self.last_bounce) > 0.1) {
-        if (vlen(self.velocity) > 400)
-        {
-            sound (self, CHAN_WEAPON, "weapons/bounce.wav", 1, ATTN_NORM);	// bounce sound
-        } else {
-            sound (self, CHAN_WEAPON, "weapons/bounce.wav", 0.3, ATTN_NORM);	// bounce sound
-        }
-        self.velocity = self.velocity * 0.99;
-    }
-    self.last_bounce = time;
-}
 
 void() PutClientInServer =
 {
 	local	entity spot;
 
-    self.touch = PlayerBounce;
 	self.classname = "player";
 	self.health = 100;
 	self.takedamage = DAMAGE_AIM;
-	self.solid = SOLID_BBOX;
-	/*self.movetype = MOVETYPE_BOUNCE;*/
-	self.movetype = MOVETYPE_FLY;
+	self.solid = SOLID_SLIDEBOX;
+	self.movetype = MOVETYPE_WALK;
 	self.show_hostile = 0;
 	self.max_health = 100;
 	self.flags = FL_CLIENT;
@@ -848,6 +766,8 @@ void() PlayerDeathThink =
 
 void() PlayerJump =
 {
+	local vector start, end;
+
 	if (self.flags & FL_WATERJUMP)
 		return;
 	
@@ -873,20 +793,70 @@ void() PlayerJump =
 		return;
 	}
 
-	if (!(self.flags & FL_ONGROUND))
-		return;
-
 	if ( !(self.flags & FL_JUMPRELEASED) )
+    {
 		return;		// don't pogo stick
+    }
+
+    self.jump_count += 1;
 
 	self.flags = self.flags - (self.flags & FL_JUMPRELEASED);
 
-	self.flags = self.flags - FL_ONGROUND;	// don't stairwalk
-	
 	self.button2 = 0;
-// player jumping sound
-	sound (self, CHAN_BODY, "player/plyrjmp8.wav", 1, ATTN_NORM);
-	self.velocity_z = self.velocity_z + 270;
+
+    switch (self.jump_count) {
+        case 1:
+            if (self.velocity_z > 0) {
+                self.velocity_z = self.velocity_z + 250;
+            } else {
+                self.velocity_z = 350;
+            }
+            sound (self, CHAN_BODY, "player/plyrjmp8.wav", 1, ATTN_NORM);
+            break;
+        case 2:
+            if (self.velocity_z > 0) {
+                self.velocity_z = self.velocity_z + 150;
+            } else {
+                self.velocity_z = 250;
+            }
+            sound (self, CHAN_BODY, "player/plyrjmp8.wav", 1, ATTN_NORM);
+            break;
+        default:
+            break;
+    }
+
+    local vector bounce_force;
+    local vector horizontal_velocity;
+    local float horizontal_speed;
+    horizontal_velocity = self.velocity;
+    horizontal_velocity_z = 0;
+    horizontal_speed = vlen(horizontal_velocity);
+
+    local float steps;
+    local float step;
+    steps = 6;
+    step = (self.maxs_z * 2) / steps;
+
+	start = self.origin;
+    start_z = self.absmin_z + 32; //avoid most stairs
+
+    local float i;
+    i = 0;
+
+    while (i < steps) {
+        i += 1;
+        end = start + v_forward * max(40, (horizontal_speed / 4.5));
+        traceline (start, end, TRUE, self);
+        if (trace_fraction < 1) i = steps;
+        start_z += step;
+    }
+
+	if (trace_fraction < 1)
+	{
+        bounce_force = trace_plane_normal * 200;
+        bounce_force_z = bounce_force_z * 0.5;
+        self.velocity = self.velocity + bounce_force;
+    }
 };
 
 
@@ -1029,23 +999,8 @@ void() PlayerPreThink =
 
 	makevectors (self.v_angle);		// is this still used
 
-    dprint("angles: ");
-    dprint(vtos(self.v_angle));
-    dprint("\n");
-
 	CheckRules ();
 	WaterMove ();
-
-
-
-    if (self.bounce)
-    {
-        self.bounce = FALSE;
-        self.velocity = self.velocity + self.bounce_vector;
-        self.velocity_x = self.velocity_x / 1.2;
-        self.velocity_y = self.velocity_y / 1.2;
-        self.velocity_z = self.velocity_z / 1.2;
-    }
 
 	if (self.waterlevel == 2)
 		CheckWaterJump ();
@@ -1059,100 +1014,19 @@ void() PlayerPreThink =
 	if (self.deadflag == DEAD_DYING)
 		return;	// dying, so do nothing
 
+	if (self.flags & FL_ONGROUND)
+        self.jump_count = 0;
 
-    if (self.button2 == 0)
-    {
-        self.move_forward = 0;
-        self.move_backward = 0;
-    }
+	if (self.button2)
+	{
+		PlayerJump ();
+	}
+	else
+		self.flags = self.flags | FL_JUMPRELEASED;
 
-
-	if (self.impulse == 20)
-    {
-        self.move_forward = TRUE;
-    }
-
-	if (self.impulse == 21)
-    {
-        self.move_forward = FALSE;
-    }
-
-	if (self.impulse == 22)
-    {
-        self.move_backward = TRUE;
-    }
-
-	if (self.impulse == 23)
-    {
-        self.move_backward = FALSE;
-    }
-
-
-
-    local float move_speed;
-    local float s, max_speed;
-    move_speed = vlen(self.velocity);
-    self.armorvalue = move_speed;
-
-
-    max_speed = 1500;
-    s = 10;
-
-    if (self.nextslowdown < time)
-    {
-        if (move_speed > 100)
-        {
-            self.velocity_x = self.velocity_x / 1.01;
-            self.velocity_y = self.velocity_y / 1.01;
-            self.velocity_z = self.velocity_z / 1.01;
-        }
-        self.nextslowdown = time + 0.1;
-    }
-
-    if (self.move_forward)
-    {
-        if (move_speed < 400)
-        {
-            local vector start, end;
-            local vector new_end;
-
-            /*self.movetype = MOVETYPE_FLY;*/
-            self.velocity = self.velocity + (v_forward * s);
-
-            /*start = self.origin;*/
-            /*end = start + v_forward * 50;*/
-            /*traceline(start, end, TRUE, self);*/
-            /*if (trace_fraction < 1)*/
-            /*{*/
-                /*// fixes getting stuck on the floor / walls*/
-                /*self.velocity = self.velocity + (trace_plane_normal * trace_fraction * 20);*/
-            /*}*/
-
-        }
-        else if (move_speed < max_speed)
-        {
-            /*self.movetype = MOVETYPE_BOUNCE;*/
-            self.velocity = self.velocity + (v_forward * s);
-        }
-        else
-        {
-            /*self.movetype = MOVETYPE_BOUNCE;*/
-        }
-
-
-    }
-
-
-    if (self.move_backward)
-    {
-        if (move_speed < max_speed)
-        {
-            self.velocity = self.velocity + (v_forward * -s);
-        }
-    }
-
-
-
+// teleporters can force a non-moving pause time	
+	if (time < self.pausetime)
+		self.velocity = '0 0 0';
 };
 	
 /*
@@ -1350,12 +1224,6 @@ void() PlayerPostThink =
 		self.jump_flag = self.velocity_z;
 
 	CheckPowerups ();
-
-    // Bounce forever
-    if (self.flags & FL_ONGROUND)
-    {
-        self.flags = self.flags - FL_ONGROUND;
-    }
 };
 
 
